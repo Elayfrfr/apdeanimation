@@ -1,0 +1,175 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Drawer Animation App',
+      theme: ThemeData(
+        primarySwatch: Colors.deepPurple,
+      ),
+      home: const HomePage(),
+      debugShowCheckedModeBanner: false,
+    );
+  }
+}
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String currentPage = "Home";
+
+  void changePage(String page) {
+    setState(() {
+      currentPage = page;
+    });
+    Navigator.pop(context); // close drawer
+  }
+
+  Widget getPageContent(String page) {
+    switch (page) {
+      case "Home":
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.home, size: 80, color: Colors.white),
+            SizedBox(height: 20),
+            Text(
+              "Welcome to the Home Page!",
+              style: TextStyle(fontSize: 24, color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        );
+      case "Profile":
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.person, size: 80, color: Colors.white),
+            SizedBox(height: 20),
+            Text(
+              "This is your Profile.",
+              style: TextStyle(fontSize: 24, color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        );
+      case "Messages":
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.message, size: 80, color: Colors.white),
+            SizedBox(height: 20),
+            Text(
+              "Check your Messages here!",
+              style: TextStyle(fontSize: 24, color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        );
+      case "Settings":
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(Icons.settings, size: 80, color: Colors.white),
+            SizedBox(height: 20),
+            Text(
+              "Adjust your Settings.",
+              style: TextStyle(fontSize: 24, color: Colors.white),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        );
+      default:
+        return const Text("Unknown Page", style: TextStyle(color: Colors.white));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(currentPage),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.deepPurple),
+              child: Text(
+                "Menu",
+                style: TextStyle(color: Colors.white, fontSize: 24),
+              ),
+            ),
+            ListTile(
+              title: const Text("Home"),
+              onTap: () => changePage("Home"),
+            ),
+            ListTile(
+              title: const Text("Profile"),
+              onTap: () => changePage("Profile"),
+            ),
+            ListTile(
+              title: const Text("Messages"),
+              onTap: () => changePage("Messages"),
+            ),
+            ListTile(
+              title: const Text("Settings"),
+              onTap: () => changePage("Settings"),
+            ),
+          ],
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/bgforeliflutter.jpg'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Center(
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 600),
+            transitionBuilder: (child, animation) {
+              // Combine slide and fade animation
+              final offsetAnimation = Tween<Offset>(
+                begin: const Offset(1, 0), // slide from right
+                end: Offset.zero,
+              ).animate(animation);
+              return SlideTransition(
+                position: offsetAnimation,
+                child: FadeTransition(
+                  opacity: animation,
+                  child: child,
+                ),
+              );
+            },
+            child: getPageContent(currentPage),
+            switchInCurve: Curves.easeOut,
+            switchOutCurve: Curves.easeIn,
+            layoutBuilder: (currentChild, previousChildren) {
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  ...previousChildren,
+                  if (currentChild != null) currentChild,
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+}
