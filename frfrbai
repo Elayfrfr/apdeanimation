@@ -1,0 +1,290 @@
+import 'package:flutter/material.dart';
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Animation App',
+      theme: ThemeData.dark(),
+      home: const MainPage(),
+    );
+  }
+}
+
+//////////////////////////////////////////////////
+// MAIN PAGE (NAVIGATION + DRAWER + BOTTOM BAR)
+//////////////////////////////////////////////////
+
+class MainPage extends StatefulWidget {
+  const MainPage({super.key});
+
+  @override
+  State<MainPage> createState() => _MainPageState();
+}
+
+class _MainPageState extends State<MainPage> {
+  int currentIndex = 0;
+
+  final List<String> titles = ["Home", "Profile", "Messages", "Settings"];
+
+  final List<Widget> pages = const [
+    HomePage(),
+    ProfilePage(),
+    MessagesPage(),
+    SettingsPage(),
+  ];
+
+  void changePage(int index) {
+    setState(() {
+      currentIndex = index;
+    });
+  }
+
+  // Drawer animation (page route transition)
+  void openPage(BuildContext context, Widget page) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 500),
+        pageBuilder: (_, __, ___) => page,
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(titles[currentIndex]),
+        centerTitle: true,
+      ),
+
+      // ===== DRAWER =====
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.deepPurple),
+              child: Center(child: Text("Menu", style: TextStyle(fontSize: 24))),
+            ),
+            ListTile(
+              leading: const Icon(Icons.home),
+              title: const Text("Home"),
+              onTap: () => openPage(context, const HomePage()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text("Profile"),
+              onTap: () => openPage(context, const ProfilePage()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.message),
+              title: const Text("Messages"),
+              onTap: () => openPage(context, const MessagesPage()),
+            ),
+            ListTile(
+              leading: const Icon(Icons.settings),
+              title: const Text("Settings"),
+              onTap: () => openPage(context, const SettingsPage()),
+            ),
+          ],
+        ),
+      ),
+
+      // ===== BODY WITH BACKGROUND =====
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/mabgpinkeu.jpg'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: pages[currentIndex],
+      ),
+
+      // ===== BOTTOM NAV =====
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.black.withOpacity(0.8),
+        selectedItemColor: Colors.deepPurple,
+        unselectedItemColor: Colors.white70,
+        currentIndex: currentIndex,
+        onTap: changePage,
+        items: const [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          BottomNavigationBarItem(icon: Icon(Icons.message), label: "Messages"),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: "Settings"),
+        ],
+      ),
+    );
+  }
+}
+
+//////////////////////////////////////////////////
+// HOME PAGE
+// Implicit + Fade + Hero
+//////////////////////////////////////////////////
+
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  bool expanded = false;
+  bool visible = true;
+
+  void animate() {
+    setState(() {
+      expanded = !expanded;
+      visible = !visible;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          GestureDetector(
+            onTap: animate,
+            child: Hero(
+              tag: "heroBox",
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 500),
+                width: expanded ? 200 : 100,
+                height: expanded ? 200 : 100,
+                decoration: BoxDecoration(
+                  color: expanded ? Colors.orange : Colors.blue,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(Icons.favorite, size: 40),
+              ),
+            ),
+          ),
+          const SizedBox(height: 20),
+          AnimatedOpacity(
+            duration: const Duration(milliseconds: 500),
+            opacity: visible ? 1 : 0,
+            child: const Text(
+              "Tap the box to animate",
+              style: TextStyle(fontSize: 18),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+//////////////////////////////////////////////////
+// PROFILE PAGE
+// Hero target
+//////////////////////////////////////////////////
+
+class ProfilePage extends StatelessWidget {
+  const ProfilePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Hero(
+        tag: "heroBox",
+        child: Container(
+          width: 150,
+          height: 150,
+          decoration: BoxDecoration(
+            color: Colors.purple,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: const Icon(Icons.person, size: 50),
+        ),
+      ),
+    );
+  }
+}
+
+//////////////////////////////////////////////////
+// MESSAGES PAGE
+// Staggered animation
+//////////////////////////////////////////////////
+
+class MessagesPage extends StatefulWidget {
+  const MessagesPage({super.key});
+
+  @override
+  State<MessagesPage> createState() => _MessagesPageState();
+}
+
+class _MessagesPageState extends State<MessagesPage> {
+  List<bool> visible = [false, false, false];
+
+  @override
+  void initState() {
+    super.initState();
+    runAnimation();
+  }
+
+  void runAnimation() async {
+    for (int i = 0; i < visible.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      setState(() {
+        visible[i] = true;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    List<String> msgs = ["Hello!", "Welcome!", "Nice UI right?"];
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(msgs.length, (index) {
+          return AnimatedOpacity(
+            duration: const Duration(milliseconds: 500),
+            opacity: visible[index] ? 1 : 0,
+            child: Padding(
+              padding: const EdgeInsets.all(8),
+              child: Text(msgs[index], style: const TextStyle(fontSize: 18)),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
+
+//////////////////////////////////////////////////
+// SETTINGS PAGE
+// Simple clean UI
+//////////////////////////////////////////////////
+
+class SettingsPage extends StatelessWidget {
+  const SettingsPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Text(
+        "Settings Page\nAll animations completed",
+        textAlign: TextAlign.center,
+        style: TextStyle(fontSize: 20),
+      ),
+    );
+  }
+}
