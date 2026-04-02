@@ -30,12 +30,7 @@ class _HomePageState extends State<HomePage> {
   bool isExpanded = false;
   bool showText = true;
 
-  final List<String> titles = [
-    "Home",
-    "Profile",
-    "Messages",
-    "Settings"
-  ];
+  final List<String> titles = ["Home", "Profile", "Messages", "Settings"];
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +68,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
         child: Container(
-          color: Colors.black.withOpacity(0.6),
+          color: Color.fromRGBO(0, 0, 0, 0.6),
           child: AnimatedSwitcher(
             duration: const Duration(milliseconds: 500),
             child: getPage(),
@@ -119,7 +114,8 @@ class _HomePageState extends State<HomePage> {
       case 1:
         return profilePage();
       case 2:
-        return messagesPage();
+        // ValueKey forces MessagesPage to fully rebuild each visit → stagger replays
+        return const MessagesPage(key: ValueKey("messages"));
       case 3:
         return settingsPage();
       default:
@@ -135,32 +131,64 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.home, size: 80),
-
           const SizedBox(height: 10),
-
           const Text("Welcome Back 👋", style: TextStyle(fontSize: 22)),
-
           const SizedBox(height: 30),
 
+          // Hero SOURCE — tapping flies the box to ProfileDetailPage
           GestureDetector(
-            onTap: () => setState(() => isExpanded = !isExpanded),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 500),
-              width: isExpanded ? 200 : 120,
-              height: isExpanded ? 200 : 120,
-              decoration: BoxDecoration(
-                color: Colors.deepPurple,
-                borderRadius: BorderRadius.circular(20),
+            onTap: () {
+              Navigator.push(
+                context,
+                PageRouteBuilder(
+                  transitionDuration: const Duration(milliseconds: 600),
+                  pageBuilder: (_, __, ___) => const ProfileDetailPage(),
+                  transitionsBuilder: (_, animation, __, child) {
+                    return FadeTransition(opacity: animation, child: child);
+                  },
+                ),
+              );
+            },
+            child: Hero(
+              tag: "profileHero",
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 500),
+                width: isExpanded ? 200 : 120,
+                height: isExpanded ? 200 : 120,
+                decoration: BoxDecoration(
+                  color: Colors.deepPurple,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.person, size: 40),
+                      Text("Tap Me", style: TextStyle(fontSize: 13)),
+                    ],
+                  ),
+                ),
               ),
-              child: const Center(child: Text("Tap Me")),
             ),
+          ),
+
+          const SizedBox(height: 8),
+          const Text(
+            "Tap box = Hero  |  Button = Implicit",
+            style: TextStyle(fontSize: 12, color: Colors.white60),
+          ),
+          const SizedBox(height: 16),
+
+          ElevatedButton(
+            onPressed: () => setState(() => isExpanded = !isExpanded),
+            child: const Text("Animate Box"),
           ),
         ],
       ),
     );
   }
 
-  // ===== PROFILE (FIXED CENTER PROPERLY) =====
+  // ===== PROFILE (bottom nav tab) =====
   Widget profilePage() {
     return Center(
       key: const ValueKey("profile"),
@@ -174,17 +202,12 @@ class _HomePageState extends State<HomePage> {
               backgroundColor: Colors.deepPurple,
               child: Icon(Icons.person, size: 50),
             ),
-
             const SizedBox(height: 10),
-
-            const Text("Saige Del Fierro",
+            const Text("Joise Velascos",
                 textAlign: TextAlign.center,
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-
             const Text("Flutter Developer", textAlign: TextAlign.center),
-
             const SizedBox(height: 20),
-
             AnimatedOpacity(
               duration: const Duration(milliseconds: 500),
               opacity: showText ? 1 : 0,
@@ -193,7 +216,6 @@ class _HomePageState extends State<HomePage> {
                 textAlign: TextAlign.center,
               ),
             ),
-
             ElevatedButton(
               onPressed: () => setState(() => showText = !showText),
               child: const Text("Toggle Info"),
@@ -204,27 +226,7 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // ===== MESSAGES (NO TITLE DUPLICATE) =====
-  Widget messagesPage() {
-    return ListView(
-      key: const ValueKey("messages"),
-      padding: const EdgeInsets.all(20),
-      children: List.generate(5, (index) {
-        return AnimatedContainer(
-          duration: Duration(milliseconds: 300 + index * 200),
-          margin: const EdgeInsets.symmetric(vertical: 8),
-          padding: const EdgeInsets.all(15),
-          decoration: BoxDecoration(
-            color: Colors.deepPurple.shade200,
-            borderRadius: BorderRadius.circular(15),
-          ),
-          child: Text("Message ${index + 1}"),
-        );
-      }),
-    );
-  }
-
-  // ===== SETTINGS (CLEAN, NO DARK MODE) =====
+  // ===== SETTINGS =====
   Widget settingsPage() {
     return Center(
       key: const ValueKey("settings"),
@@ -232,25 +234,141 @@ class _HomePageState extends State<HomePage> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.settings, size: 80),
-
           const SizedBox(height: 10),
-
           const Text("App Settings"),
-
           const SizedBox(height: 30),
-
           AnimatedContainer(
             duration: const Duration(milliseconds: 500),
             width: isExpanded ? 200 : 100,
             height: 20,
             color: Colors.deepPurple,
           ),
-
           ElevatedButton(
             onPressed: () => setState(() => isExpanded = !isExpanded),
             child: const Text("Animate"),
           ),
         ],
+      ),
+    );
+  }
+}
+
+//////////////////////////////////////////////////
+// MESSAGES PAGE — Staggered Animation
+// Must be a separate StatefulWidget so initState
+// fires fresh each time the tab is visited
+//////////////////////////////////////////////////
+
+class MessagesPage extends StatefulWidget {
+  const MessagesPage({super.key});
+
+  @override
+  State<MessagesPage> createState() => _MessagesPageState();
+}
+
+class _MessagesPageState extends State<MessagesPage> {
+  final List<bool> _visible = List.generate(5, (_) => false);
+
+  @override
+  void initState() {
+    super.initState();
+    _runStagger();
+  }
+
+  Future<void> _runStagger() async {
+    for (int i = 0; i < _visible.length; i++) {
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (mounted) {
+        setState(() => _visible[i] = true);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: List.generate(5, (index) {
+        return AnimatedOpacity(
+          duration: const Duration(milliseconds: 400),
+          opacity: _visible[index] ? 1.0 : 0.0,
+          child: AnimatedContainer(
+            duration: Duration(milliseconds: 300 + index * 200),
+            margin: const EdgeInsets.symmetric(vertical: 8),
+            padding: const EdgeInsets.all(15),
+            decoration: BoxDecoration(
+              color: Colors.deepPurple.shade200,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Text("Message ${index + 1}"),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+//////////////////////////////////////////////////
+// PROFILE DETAIL PAGE — Hero DESTINATION
+// Pushed from Home via PageRouteBuilder (fade transition)
+//////////////////////////////////////////////////
+
+class ProfileDetailPage extends StatelessWidget {
+  const ProfileDetailPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text("Profile"),
+        centerTitle: true,
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          image: DecorationImage(
+            image: AssetImage('assets/mabgpinkeu.jpg'),
+            fit: BoxFit.cover,
+          ),
+        ),
+        child: Container(
+          color: Color.fromRGBO(0, 0, 0, 0.6),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                // Hero DESTINATION — same tag "profileHero", bigger size
+                Hero(
+                  tag: "profileHero",
+                  child: Container(
+                    width: 220,
+                    height: 220,
+                    decoration: BoxDecoration(
+                      color: Colors.deepPurple,
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.person, size: 90),
+                        Text("Profile", style: TextStyle(fontSize: 20)),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text("Joise Velascos",
+                    style: TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.bold)),
+                const Text("Flutter Developer"),
+                const SizedBox(height: 8),
+                const Text(
+                  "Hello! This is your profile ✨",
+                  style: TextStyle(color: Colors.white70),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
