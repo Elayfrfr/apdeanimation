@@ -1,38 +1,55 @@
 <?php
+$error = $_GET['error'];
+?>
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Error</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="box">
+    <h2>Connection Error</h2>
+    <p><?php echo htmlspecialchars($error); ?></p>
+  </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+<?php
 include "db_connection.php";
 $message = "";
-$alert = "";
 
 if (isset($_POST['register'])) {
-    if (!$conn) {
-        $alert = "Database connection failed";
-    } else {
-        try {
-            $fullname = $_POST['fullname'];
-            $username = $_POST['username'];
-            $password = $_POST['password'];
-            $confirm  = $_POST['confirm'];
+    try {
+        $fullname = $_POST['fullname'];
+        $username = $_POST['username'];
+        $password = $_POST['password'];
+        $confirm  = $_POST['confirm'];
 
-            if ($password != $confirm) {
-                $message = "Passwords do not match";
+        if ($password != $confirm) {
+            $message = "Passwords do not match";
+        } else {
+            $check = mysqli_query($conn, "SELECT * FROM users WHERE username = '$username'");
+
+            if (mysqli_num_rows($check) > 0) {
+                $message = "Username already taken";
             } else {
-                // duplicate check
-                $check = mysqli_query($conn, "SELECT * FROM users WHERE username = '$username'");
+                $hashed = password_hash($password, PASSWORD_DEFAULT);
 
-                if (mysqli_num_rows($check) > 0) {
-                    $message = "Username already taken";
-                } else {
-                    // hash the password before saving
-                    $hashed = password_hash($password, PASSWORD_DEFAULT);
-
-                    mysqli_query($conn, "INSERT INTO users (fullname, username, password)
-                                         VALUES ('$fullname', '$username', '$hashed')");
-                    $message = "Registered successfully!";
-                }
+                mysqli_query($conn, "INSERT INTO users (fullname, username, password)
+                                     VALUES ('$fullname', '$username', '$hashed')");
+                $message = "Registered successfully!";
             }
-        } catch (Exception $e) {
-            $message = "Something went wrong. Please try again.";
         }
+    } catch (Exception $e) {
+        $message = "Something went wrong. Please try again.";
     }
 }
 ?>
@@ -55,14 +72,12 @@ if (isset($_POST['register'])) {
     </form>
     <p class="link">Already have an account? <a href="login.php">Login</a></p>
   </div>
-
-  <?php
-  if ($alert != "") {
-      echo "<script>alert('$alert');</script>";
-  }
-  ?>
 </body>
 </html>
+
+
+
+
 
 
 
@@ -72,29 +87,22 @@ if (isset($_POST['register'])) {
 <?php
 include "db_connection.php";
 $message = "";
-$alert = "";
 
 if (isset($_POST['login'])) {
-    if (!$conn) {
-        $alert = "Database connection failed";
-    } else {
-        try {
-            $username = $_POST['username'];
-            $password = $_POST['password'];
+    try {
+        $username = $_POST['username'];
+        $password = $_POST['password'];
 
-            // find the user by username only
-            $result = mysqli_query($conn, "SELECT * FROM users WHERE username = '$username'");
-            $user = mysqli_fetch_assoc($result);
+        $result = mysqli_query($conn, "SELECT * FROM users WHERE username = '$username'");
+        $user = mysqli_fetch_assoc($result);
 
-            // compare typed password with the hash
-            if ($user && password_verify($password, $user['password'])) {
-                $message = "Login successful!";
-            } else {
-                $message = "Wrong username or password";
-            }
-        } catch (Exception $e) {
-            $message = "Something went wrong. Please try again.";
+        if ($user && password_verify($password, $user['password'])) {
+            $message = "Login successful!";
+        } else {
+            $message = "Wrong username or password";
         }
+    } catch (Exception $e) {
+        $message = "Something went wrong. Please try again.";
     }
 }
 ?>
@@ -115,14 +123,5 @@ if (isset($_POST['login'])) {
     </form>
     <p class="link">No account yet? <a href="registration.php">Register</a></p>
   </div>
-
-  <?php
-  if ($alert != "") {
-      echo "<script>alert('$alert');</script>";
-  }
-  ?>
 </body>
 </html>
-
-
-
