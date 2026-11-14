@@ -1,10 +1,11 @@
 <?php
 include "db_connection.php";
 $message = "";
+$alert = "";
 
 if (isset($_POST['register'])) {
     if (!$conn) {
-        $message = "Database connection failed";
+        $alert = "Database connection failed";
     } else {
         try {
             $fullname = $_POST['fullname'];
@@ -30,7 +31,7 @@ if (isset($_POST['register'])) {
                 }
             }
         } catch (Exception $e) {
-            $message = "Something went wrong. Please try again.";
+            $alert = "Something went wrong. Please try again.";
         }
     }
 }
@@ -44,6 +45,7 @@ if (isset($_POST['register'])) {
 <body>
   <div class="box">
     <h2>Registration</h2>
+    <p><?php echo $message; ?></p>
     <form method="POST">
       Fullname <input type="text" name="fullname" required>
       Username <input type="text" name="username" required>
@@ -55,21 +57,21 @@ if (isset($_POST['register'])) {
   </div>
 
   <?php
-  if ($message != "") {
-      echo "<script>alert('$message');</script>";
+  if ($alert != "") {
+      echo "<script>alert('$alert');</script>";
   }
   ?>
 </body>
 </html>
 
-
 <?php
 include "db_connection.php";
 $message = "";
+$alert = "";
 
 if (isset($_POST['login'])) {
     if (!$conn) {
-        $message = "Database connection failed";
+        $alert = "Database connection failed";
     } else {
         try {
             $username = $_POST['username'];
@@ -86,7 +88,7 @@ if (isset($_POST['login'])) {
                 $message = "Wrong username or password";
             }
         } catch (Exception $e) {
-            $message = "Something went wrong. Please try again.";
+            $alert = "Something went wrong. Please try again.";
         }
     }
 }
@@ -100,6 +102,7 @@ if (isset($_POST['login'])) {
 <body>
   <div class="box">
     <h2>Login</h2>
+    <p><?php echo $message; ?></p>
     <form method="POST">
       Username <input type="text" name="username" required>
       Password <input type="password" name="password" required>
@@ -109,9 +112,11 @@ if (isset($_POST['login'])) {
   </div>
 
   <?php
-  if ($message != "") {
-      echo "<script>alert('$message');</script>";
+  if ($alert != "") {
+      echo "<script>alert('$alert');</script>";
   }
   ?>
 </body>
 </html>
+
+
